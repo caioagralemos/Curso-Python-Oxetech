@@ -10,6 +10,9 @@ class Aluno(Pessoa):
         self.matricula = matricula
         self.notas = notas
         self.frequencia = 0
+
+    def __str__(self) -> str:
+        return f'{self.nome} - matricula {self.matricula}'
     
     def realizar_prova(self, prova):
         respostas = []

@@ -34,6 +34,6 @@ print(f'Temos {len(alunos_in)} alunos dentro da escola agora.')
 
 prova = prof.criarProva()
 
-print(caio.realizar_prova(prova))
+print(zeca_pg.realizar_prova(prova))
 
 print(prova.notas)
