@@ -1,6 +1,9 @@
 import pygame as pg
 import os
 import random
+from classes.cano import Cano
+from classes.passaro import Passaro
+from classes.chao import Chao
 
 pg.init()
 
@@ -10,7 +13,7 @@ tela = pg.display.set_mode((larguraTela, alturaTela))
 
 imgCano = pg.transform.scale2x(pg.image.load(os.path.join('assets', 'pipe.png')))
 imgFundo = pg.transform.scale2x(pg.image.load(os.path.join('assets', 'bg.png')))
-imgChao = pg.transform.scale2x(pg.image.load(os.path.join('assets', 'base.png')))
+imgBase = pg.transform.scale2x(pg.image.load(os.path.join('assets', 'base.png')))
 imgPassaro = [
     pg.transform.scale2x(pg.image.load(os.path.join('assets', 'bird1.png'))),
     pg.transform.scale2x(pg.image.load(os.path.join('assets', 'bird2.png'))),
@@ -20,57 +23,69 @@ imgPassaro = [
 pg.font.init()
 fontePontos = pg.font.SysFont('SF Pro', 45)
 
-class Passaro:
-    imgs = imgPassaro
+def desenharTela(tela, passaros, canos, chao, pontos):
+    tela.blit(imgFundo, (0,0))
+    for passaro in passaros:
+        passaro.desenhar(tela)
+    for cano in canos:
+        cano.desenhar(tela)
 
-    rotacaoMax = 25
-    velocidadeRotacao = 20
-    tempoAnimacao = 5
+    texto = fontePontos.render(f'Pontos: {pontos}', 1, (255,255,255))
+    tela.blit(texto, (larguraTela - 10 - texto.get_width(), 10))
+    chao.desenhar(tela)
+    pg.display.update()
 
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.angulo = 0
-        self.velocidade = 0
-        self.altura = self.y
-        self.tempo = 0
-        self.contador_imagem = 0
-        self.imagem = self.imgs[0]
+def main():
+    passaros = [Passaro(230,350)]
+    chao = Chao(730)
+    canos = [Cano(700)]
+    tela = pg.display.set_mode((larguraTela,alturaTela))
+    pontos = 0
+    relogio = pg.time.Clock()
 
-    def pular(self):
-        self.velocidade = -10.5
-        self.tempo = 0
-        self.altura = self.y
+    rodando = True
+    while rodando:
+        relogio.tick(30)
 
-    def mover(self):
-        self.tempo += 1
-        deslocamento = 1.5 * (self.tempo**2) + self.velocidade * self.tempo
+        for evento in pg.event.get():
+            if evento.type == pg.QUIT:
+                rodando = False
+                pg.quit()
+                quit()
+            if evento.type == pg.KEYDOWN:
+                if evento.key == pg.K_SPACE:
+                    for passaro in passaros:
+                        passaro.pular()
 
-        if deslocamento > 16:
-            deslocamento = 16
-        elif deslocamento < 0:
-            deslocamento -= 12
+        for passaro in passaros:
+            passaro.mover()
+        chao.mover()
 
-        self.y += deslocamento
+        adicionarCano = False
+        removerCanos = []
+        for cano in canos:
+            for i, passaro in enumerate(passaros):
+                if cano.colidir(passaro):
+                    passaros.pop(i)
+                if not cano.passou and passaro.x > cano.x:
+                    cano.passou = True
+                    adicionarCano = True
+            cano.mover()
+            if cano.x + cano.canoTopo.get_width() <0:
+                removerCanos.append(cano)
+        
+        if adicionarCano:
+            pontos += 1
+            canos.append(Cano(600))
+        for cano in removerCanos:
+            canos.remove(cano)
+            
+        for i,passaro in enumerate(passaros):
+            if (passaro.y + passaro.imagem.get_height()) > chao.y or passaro.y <0:
+                passaros.pop(i)
+                
+        desenharTela(tela,passaros,canos,chao,pontos)
+        
 
-        if deslocamento < 0 or self.y < (self.altura+50):
-            if self.angulo < self.rotacaoMax:
-                self.angulo = self.rotacaoMax
-        else:
-            if self.angulo > -90:
-                self.angulo -= self.velocidadeRotacao
-    
-    def desenhar(self, tela):
-        self.contagem_imagem += 1
-
-        if self.contador_imagem < self.tempoAnimacao:
-            self.imagem = self.imgs[0]
-        elif self.contador_imagem < self.tempoAnimacao*2:
-            self.imagem = self.imgs[1]
-        elif self.contador_imagem < self.tempoAnimacao*3:
-            self.imagem = self.imgs[2]
-        elif self.contador_imagem < self.tempoAnimacao*4:
-            self.imagem = self.imgs[1]
-        elif self.contador_imagem >= self.tempoAnimacao*4 + 1:
-            self.imagem = self.imgs[0]
-            self.contador_imagem = 0
+if __name__ == '__main__':
+    main()    
